@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SE ハンター</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3f;
+    --accent:#7c6aff;--accent2:#ff6a8a;--accent3:#6affd4;--text:#e8e8f0;--muted:#6a6a88;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Noto Sans JP",sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,255,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .container{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:48px 24px 80px;}
+  header{text-align:center;margin-bottom:52px;}
+  .logo{font-family:"Syne",sans-serif;font-size:13px;font-weight:700;letter-spacing:.35em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;opacity:0;animation:fadeUp .6s ease forwards;}
+  h1{font-family:"Syne",sans-serif;font-size:clamp(36px,7vw,64px);font-weight:800;line-height:1;letter-spacing:-.02em;opacity:0;animation:fadeUp .6s .1s ease forwards;}
+  h1 span.gradient{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .subtitle{margin-top:14px;color:var(--muted);font-size:14px;font-weight:300;letter-spacing:.04em;opacity:0;animation:fadeUp .6s .2s ease forwards;}
+  .search-wrap{position:relative;margin-bottom:24px;opacity:0;animation:fadeUp .6s .3s ease forwards;}
+  .search-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 64px 18px 20px;font-size:16px;font-family:"Noto Sans JP",sans-serif;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;}
+  .search-input::placeholder{color:var(--muted);}
+  .search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,106,255,.15);}
+  .search-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--accent);border:none;border-radius:8px;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .15s;font-size:18px;}
+  .search-btn:hover{background:#9580ff;transform:translateY(-50%) scale(1.05);}
+  .search-btn:disabled{background:var(--border);cursor:not-allowed;transform:translateY(-50%);}
+  .categories{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:32px;opacity:0;animation:fadeUp .6s .4s ease forwards;}
+  .cat-tag{padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12px;cursor:pointer;transition:all .2s;user-select:none;}
+  .cat-tag:hover{border-color:var(--accent);color:var(--accent);}
+  .cat-tag.active{background:rgba(124,106,255,.15);border-color:var(--accent);color:var(--accent);}
+  #loadingBar{display:none;align-items:center;gap:12px;margin-bottom:20px;padding:12px 16px;background:rgba(124,106,255,.06);border:1px solid rgba(124,106,255,.2);border-radius:10px;font-size:13px;color:var(--muted);}
+  #loadingBar.visible{display:flex;}
+  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #translateBadge{display:none;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;flex-wrap:wrap;}
+  #translateBadge.visible{display:flex;}
+  .badge-label{color:var(--muted);font-size:12px;}
+  .badge-ja{background:rgba(124,106,255,.15);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:3px 10px;font-family:"Syne",sans-serif;font-size:12px;font-weight:700;}
+  .badge-arrow{color:var(--muted);}
+  .badge-en{background:rgba(106,255,212,.1);border:1px solid var(--accent3);color:var(--accent3);border-radius:6px;padding:3px 10px;font-family:"Syne",sans-serif;font-size:12px;font-weight:700;}
+  .badge-note{color:var(--muted);font-size:11px;}
+  #statusBar{display:none;align-items:center;gap:10px;margin-bottom:20px;padding:12px 16px;background:rgba(106,255,212,.06);border:1px solid rgba(106,255,212,.2);border-radius:10px;font-size:13px;}
+  #statusBar.visible{display:flex;}
+  .status-keyword{font-family:"Syne",sans-serif;font-weight:700;color:var(--accent3);}
+  .status-count{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap;}
+  .hit-dot{width:8px;height:8px;border-radius:50%;background:var(--accent3);box-shadow:0 0 6px var(--accent3);display:inline-block;animation:pulse 1.5s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.65)}}
+  .clear-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 10px;cursor:pointer;transition:all .2s;font-family:"Noto Sans JP",sans-serif;}
+  .clear-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+  .section-label{font-family:"Syne",sans-serif;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;padding-left:2px;}
+  .sites-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:12px;}
+  .miss-section{margin-top:28px;}
+  .miss-label{font-family:"Syne",sans-serif;font-size:11px;letter-spacing:.2em;color:var(--muted);margin-bottom:12px;}
+  .site-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--text);transition:border-color .2s,background .2s,transform .2s,box-shadow .2s,opacity .3s;cursor:pointer;opacity:0;animation:fadeUp .5s ease forwards;position:relative;overflow:hidden;}
+  .site-card:not(.hit):not(.miss):hover{border-color:var(--accent);background:var(--surface2);transform:translateY(-2px);}
+  .site-card.hit{border-color:var(--accent3);background:rgba(106,255,212,.04);box-shadow:0 0 16px rgba(106,255,212,.07);}
+  .site-card.hit:hover{background:rgba(106,255,212,.09);transform:translateY(-2px);box-shadow:0 4px 24px rgba(106,255,212,.14);}
+  .site-card.miss{opacity:.32!important;filter:grayscale(50%);}
+  .site-card.miss:hover{opacity:.65!important;filter:grayscale(0%);transform:translateY(-1px);border-color:rgba(255,255,255,.12);}
+  .hit-badge{position:absolute;top:10px;right:10px;background:var(--accent3);color:#0a0a0f;font-family:"Syne",sans-serif;font-size:9px;font-weight:800;letter-spacing:.12em;padding:2px 8px;border-radius:100px;text-transform:uppercase;opacity:0;transform:scale(.7);transition:opacity .3s,transform .3s;pointer-events:none;}
+  .site-card.hit .hit-badge{opacity:1;transform:scale(1);}
+  /* 訪問済み */
+  .site-card.visited{border-color:rgba(255,200,106,.4);background:rgba(255,200,106,.03);}
+  .site-card.visited .site-name::after{content:" ✓";color:#ffc86a;font-size:12px;}
+  .site-card.visited .site-arrow{color:#ffc86a;}
+  .site-card.visited .waveform span{background:#ffc86a;opacity:.6;}
+  .visited-badge{position:absolute;top:10px;right:10px;background:rgba(255,200,106,.15);border:1px solid rgba(255,200,106,.4);color:#ffc86a;font-family:"Syne",sans-serif;font-size:9px;font-weight:800;letter-spacing:.1em;padding:2px 8px;border-radius:100px;pointer-events:none;display:none;}
+  .site-card.visited .visited-badge{display:block;}
+  .site-card.visited.hit .hit-badge{display:none;}
+  /* 訪問済みカード内の小メモ欄 */
+  .visited-note{font-size:10px;color:#ffc86a;margin-top:4px;display:none;align-items:center;gap:4px;flex-wrap:wrap;}
+  .site-card.visited .visited-note{display:flex;}
+  /* 訪問リセットボタン */
+  #visitedResetWrap{display:none;justify-content:flex-end;margin-bottom:8px;}
+  #visitedResetWrap.visible{display:flex;}
+  .visited-reset-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 12px;cursor:pointer;transition:all .2s;font-family:"Noto Sans JP",sans-serif;}
+  .visited-reset-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+  .kw-badges{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+  .kw-badge{font-size:10px;padding:1px 7px;border-radius:100px;font-family:"Syne",sans-serif;}
+  .kw-badge.ja-kw{background:rgba(124,106,255,.12);color:var(--accent);}
+  .kw-badge.en-kw{background:rgba(106,255,212,.1);color:var(--accent3);border:1px solid rgba(106,255,212,.2);}
+  .site-info{flex:1;min-width:0;}
+  .site-name{font-family:"Syne",sans-serif;font-size:14px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .site-desc{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .site-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+  .site-tag{font-size:10px;padding:2px 7px;border-radius:100px;background:rgba(124,106,255,.12);color:var(--accent);}
+  .site-tag.env{background:rgba(106,255,212,.1);color:var(--accent3);}
+  .site-tag.ui{background:rgba(255,106,138,.1);color:var(--accent2);}
+  .site-tag.bgm{background:rgba(255,200,106,.1);color:#ffc86a;}
+  .site-arrow{color:var(--muted);font-size:16px;flex-shrink:0;transition:color .2s,transform .2s;}
+  .site-card.hit .site-arrow{color:var(--accent3);}
+  .site-card:hover .site-arrow{transform:translate(2px,-2px);}
+  .waveform{display:flex;align-items:center;gap:2px;height:20px;flex-shrink:0;}
+  .waveform span{display:block;width:3px;border-radius:2px;background:var(--accent);opacity:.45;animation:wave 1.2s ease-in-out infinite;}
+  .site-card.hit .waveform span{background:var(--accent3);opacity:.85;}
+  .waveform span:nth-child(2){animation-delay:.2s}.waveform span:nth-child(3){animation-delay:.4s}.waveform span:nth-child(4){animation-delay:.2s}
+  @keyframes wave{0%,100%{height:6px}50%{height:18px}}
+  footer{text-align:center;color:var(--muted);font-size:12px;opacity:.5;margin-top:40px;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @media(max-width:480px){.container{padding:32px 16px 60px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">🎧 SE Hunter</div>
+    <h1>音を、<span class="gradient">一撃で</span>探す。</h1>
+    <p class="subtitle">日本語で検索 → 英語サイトには自動翻訳して渡します</p>
+  </header>
+
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" type="text" placeholder="例：雨音, クリック音, 森, notification ..." autocomplete="off">
+    <button class="search-btn" id="searchBtn">🔍</button>
+  </div>
+
+  <div class="categories" id="categories">
+    <span class="cat-tag active" data-cat="all">すべて</span>
+    <span class="cat-tag" data-cat="env">🌿 環境音・自然</span>
+    <span class="cat-tag" data-cat="ui">🔔 UI・通知</span>
+    <span class="cat-tag" data-cat="bgm">🎵 BGM・ループ</span>
+    <span class="cat-tag" data-cat="se">💥 効果音全般</span>
+    <span class="cat-tag" data-cat="ja">🇯🇵 日本語サイト</span>
+    <span class="cat-tag" data-cat="free">✅ 無料・商用可</span>
+  </div>
+
+  <div id="loadingBar">
+    <div class="spinner"></div>
+    <span>英語に変換中…</span>
+  </div>
+
+  <div id="translateBadge">
+    <span class="badge-label">検索ワード：</span>
+    <span class="badge-ja" id="badgeJa"></span>
+    <span class="badge-arrow" id="badgeArrow"></span>
+    <span class="badge-en" id="badgeEn"></span>
+    <span class="badge-note" id="badgeNote"></span>
+  </div>
+
+  <div id="statusBar">
+    <span class="hit-dot"></span>
+    <span>「<span class="status-keyword" id="statusKeyword"></span>」を検索中</span>
+    <span class="status-count" id="statusCount"></span>
+    <button class="clear-btn" id="clearBtn">✕ クリア</button>
+  </div>
+
+  <div id="siteList">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="section-label" id="sectionLabel" style="margin-bottom:0">対応サイト一覧</div>
+      <button class="visited-reset-btn" id="visitedResetBtn" style="display:none">✓ チェック済みをリセット</button>
+    </div>
+    <div class="sites-grid" id="sitesGrid"></div>
+    <div class="miss-section" id="missSection" style="display:none">
+      <div class="miss-label">── このカテゴリでは見つかりにくいかも</div>
+      <div class="sites-grid" id="missGrid"></div>
+    </div>
+  </div>
+
+  <footer>日本語 → 自動で英訳してから英語サイトに渡します　|　Enter または 🔍 で検索</footer>
+</div>
+
+<script>
+const SITES = [
+  {name:"Freesound",        desc:"世界最大級のSEコミュニティ。CC0多数",              url:"https://freesound.org/search/?q={q}",                              tags:["se","env","ui"],         tagLabels:["SE全般","環境音"], free:true,  jaOk:false},
+  {name:"効果音ラボ",        desc:"日本語UI・商用無料。種類豊富",                     url:"https://soundeffect-lab.info/sound/search/?s={q}",                 tags:["se","ui","ja","free"],   tagLabels:["UI音","日本語"],   free:true,  jaOk:true },
+  {name:"魔王魂",            desc:"BGM・SE豊富。商用・同人可",                       url:"https://maoudamashii.jokersounds.com/music_search.html?keyword={q}",tags:["bgm","se","ja","free"],  tagLabels:["BGM","日本語"],    free:true,  jaOk:true },
+  {name:"ZapSplat",         desc:"9万件以上。無料登録でDL可",                       url:"https://www.zapsplat.com/sound-effect-categories/?s={q}",           tags:["se","env","ui","free"],  tagLabels:["SE全般"],          free:true,  jaOk:false},
+  {name:"Mixkit",           desc:"高品質。商用無料、登録不要",                       url:"https://mixkit.co/free-sound-effects/search/{q}/",                 tags:["se","ui","bgm","free"],  tagLabels:["BGM","UI音"],      free:true,  jaOk:false},
+  {name:"Pixabay Sound",    desc:"CC0。音楽もSEもまとめて探せる",                   url:"https://pixabay.com/sound-effects/search/{q}/",                    tags:["se","env","bgm","free"], tagLabels:["SE全般","環境音"],  free:true,  jaOk:false},
+  {name:"SoundBible",       desc:"シンプルで使いやすいSEライブラリ",                 url:"http://soundbible.com/search.php?q={q}",                            tags:["se","env","free"],       tagLabels:["SE全般"],          free:true,  jaOk:false},
+  {name:"BBC Sound Effects",desc:"BBC制作の本格サウンド。無料DL可",                 url:"https://sound-effects.bbcrewind.co.uk/?q={q}",                     tags:["env","se","free"],       tagLabels:["環境音","SE全般"],  free:true,  jaOk:false},
+  {name:"OtoLogic",         desc:"日本語。ループBGM・SEが豊富",                     url:"https://otologic.jp/free/search.html?search_word={q}",              tags:["bgm","se","ja","free"],  tagLabels:["BGM","日本語"],    free:true,  jaOk:true },
+  {name:"甘茶の音楽工房",    desc:"BGM特化。やわらか系・日本語",                     url:"https://amachamusic.chagasi.com/search.php?q={q}",                  tags:["bgm","ja","free"],       tagLabels:["BGM","日本語"],    free:true,  jaOk:true },
+  {name:"DOVA-SYNDROME",    desc:"BGM特化。商用可・無料",                           url:"https://dova-s.jp/search.php?keyword={q}",                         tags:["bgm","ja","free"],       tagLabels:["BGM","日本語"],    free:true,  jaOk:true },
+  {name:"Soundsnap",        desc:"プロ品質。月5件まで無料",                         url:"https://www.soundsnap.com/search/{q}",                             tags:["se","env","ui"],         tagLabels:["高品質"],          free:false, jaOk:false},
+  {name:"Adobe Stock Audio",desc:"Adobeのライブラリ。CCユーザー向き",               url:"https://stock.adobe.com/jp/search/audio?k={q}",                    tags:["se","ui","bgm"],         tagLabels:["SE","BGM"],        free:false, jaOk:false},
+  {name:"Pond5",            desc:"プロ向け大型ライブラリ",                           url:"https://www.pond5.com/sound-effects#1/q:{q}",                      tags:["se","env","bgm"],        tagLabels:["プロ向け"],        free:false, jaOk:false},
+];
+
+const KEYWORD_HINTS = {
+  // 環境音・自然
+  rain:["env","se"],雨:["env","se"],川:["env","se"],水:["env","se"],海:["env","se"],
+  ocean:["env","se"],river:["env","se"],lake:["env","se"],湖:["env","se"],
+  wind:["env","se"],風:["env","se"],森:["env","se"],forest:["env","se"],
+  鳥:["env","se"],bird:["env","se"],虫:["env","se"],insect:["env","se"],cricket:["env","se"],
+  fire:["env","se"],炎:["env","se"],焚き火:["env","se"],campfire:["env","se"],
+  thunder:["env","se"],雷:["env","se"],storm:["env","se"],嵐:["env","se"],
+  wave:["env","se"],nature:["env","se"],ambient:["env","se"],自然:["env","se"],
+  stream:["env","se"],waterfall:["env","se"],滝:["env","se"],
+  leaves:["env","se"],葉:["env","se"],grass:["env","se"],草:["env","se"],
+  // 日常・生活SE
+  door:["se"],ドア:["se"],knock:["se"],ノック:["se"],footstep:["se"],
+  足音:["se"],steps:["se"],walk:["se"],歩く:["se"],run:["se"],走る:["se"],
+  crowd:["se"],人混み:["se"],traffic:["se"],車:["se"],car:["se"],
+  phone:["se"],電話:["se"],clock:["se"],時計:["se"],glass:["se"],ガラス:["se"],
+  paper:["se"],紙:["se"],keyboard:["se"],キーボード:["se"],typing:["se"],
+  coin:["se"],コイン:["se"],cash:["se"],box:["se"],箱:["se"],
+  // UI・通知
+  click:["ui","se"],クリック:["ui","se"],button:["ui","se"],ボタン:["ui","se"],
+  notification:["ui","se"],通知:["ui","se"],alert:["ui","se"],ping:["ui","se"],
+  beep:["ui","se"],hover:["ui","se"],pop:["ui","se"],swoosh:["ui","se"],
+  ui:["ui","se"],chime:["ui","se"],チャイム:["ui","se"],ding:["ui","se"],
+  error:["ui","se"],success:["ui","se"],complete:["ui","se"],完了:["ui","se"],
+  // BGM・ループ
+  bgm:["bgm"],loop:["bgm"],ループ:["bgm"],music:["bgm"],
+  jazz:["bgm"],piano:["bgm"],ピアノ:["bgm"],acoustic:["bgm"],melody:["bgm"],
+  guitar:["bgm"],ギター:["bgm"],orchestral:["bgm"],オーケストラ:["bgm"],
+  relaxing:["bgm"],リラックス:["bgm"],calm:["bgm"],穏やか:["bgm"],
+  epic:["bgm"],dramatic:["bgm"],ambient_music:["bgm"],
+  // アクション・ゲーム系SE
+  explosion:["se"],爆発:["se"],sword:["se"],剣:["se"],slash:["se"],
+  magic:["se"],魔法:["se"],gun:["se"],shot:["se"],銃:["se"],
+  impact:["se"],打撃:["se"],衝撃:["se"],hit:["se"],punch:["se"],
+  arrow:["se"],矢:["se"],shield:["se"],盾:["se"],jump:["se"],ジャンプ:["se"],
+  collect:["se"],取得:["se"],item:["se"],アイテム:["se"],power:["se"],
+};
+
+// キーワード辞書に載っていない未知ワードかどうかを判定
+function isUnknownKeyword(kw){
+  const lower=kw.toLowerCase();
+  return !Object.keys(KEYWORD_HINTS).some(k=>lower.includes(k.toLowerCase()));
+}
+
+let activeFilter="all",currentJaKw="",currentEnKw="",isJapanese=false;
+const visitedSites=new Map();
+
+function detectJapanese(str){ return /[\u3040-\u30ff\u4e00-\u9fff]/.test(str); }
+
+async function translateToEnglish(jaKw){
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-20250514",
+      max_tokens:100,
+      messages:[{role:"user",content:"日本語のサウンドエフェクト検索キーワードを、英語の音声素材サイトで検索するのに最適な英単語1〜3語に変換してください。\nキーワード：「"+jaKw+"」\nJSON形式で {\"en\": \"英語キーワード\"} のみ返してください。"}]
+    })
+  });
+  const data=await res.json();
+  const text=data.content.map(b=>b.text||"").join("").replace(/```json|```/g,"").trim();
+  const parsed=JSON.parse(text);
+  return parsed.en||jaKw;
+}
+
+function guessHitCategories(kw){
+  const lower=kw.toLowerCase();
+  const matched=new Set();
+  for(const [k,cats] of Object.entries(KEYWORD_HINTS)){
+    if(lower.includes(k.toLowerCase())) cats.forEach(c=>matched.add(c));
+  }
+  return matched;
+}
+
+// hitCatsが空＝辞書に載ってない未知キーワード → 全サイトHIT
+// hitCatsがあれば、サイトのタグと一致するものだけHIT
+function isHit(site,hitCats,unknown){ return unknown||hitCats.size===0||site.tags.some(t=>hitCats.has(t)); }
+function tagType(cat){ return cat==="env"?"env":cat==="ui"?"ui":cat==="bgm"?"bgm":""; }
+
+function buildCard(site,hitMode,jaKw,enKw,delay){
+  const tagHTML=site.tagLabels.map((l,i)=>`<span class="site-tag ${tagType(site.tags[i])}">${l}</span>`).join("");
+  const freeTag=site.free?`<span class="site-tag">無料</span>`:`<span class="site-tag ui">有料</span>`;
+  const kwForSite=(isJapanese&&!site.jaOk&&enKw)?enKw:(jaKw||enKw||"sound");
+  let kwBadge="";
+  if(jaKw&&enKw&&jaKw!==enKw){
+    kwBadge=site.jaOk
+      ?`<div class="kw-badges"><span class="kw-badge ja-kw">🇯🇵 ${jaKw}</span></div>`
+      :`<div class="kw-badges"><span class="kw-badge en-kw">🔤 ${enKw}</span></div>`;
+  }
+  const isVisited=visitedSites.has(site.name);
+  const card=document.createElement("div");
+  card.className="site-card"+(hitMode==="hit"?" hit":hitMode==="miss"?" miss":"")+(isVisited?" visited":"");
+  card.style.animationDelay=delay+"s";
+  const visitedTime=isVisited?`<div class="visited-note">✓ チェック済み　<span style="opacity:.6">${visitedSites.get(site.name)}</span></div>`:"";
+  card.innerHTML=`<span class="hit-badge">HIT ✓</span><span class="visited-badge">✓ 済</span><div class="waveform"><span></span><span></span><span></span><span></span></div><div class="site-info"><div class="site-name">${site.name}</div><div class="site-desc">${site.desc}</div><div class="site-tags">${tagHTML}${freeTag}</div>${kwBadge}${visitedTime}</div><div class="site-arrow">↗</div>`;
+  card.addEventListener("click",()=>{
+    const now=new Date();
+    const timeStr=now.getHours()+":"+String(now.getMinutes()).padStart(2,"0");
+    visitedSites.set(site.name,timeStr+"に訪問");
+    card.classList.add("visited");
+    const vb=card.querySelector(".visited-badge");
+    if(vb) vb.style.display="block";
+    const vn=card.querySelector(".visited-note");
+    if(vn){vn.style.display="flex";vn.innerHTML=`✓ チェック済み　<span style="opacity:.6">${timeStr}に訪問</span>`;}
+    const sn=card.querySelector(".site-name");
+    if(sn&&!sn.textContent.includes("✓")) sn.textContent=site.name;
+    updateResetBtn();
+    window.open(site.url.replace("{q}",encodeURIComponent(kwForSite)),"_blank");
+  });
+  return card;
+}
+
+function updateResetBtn(){
+  const btn=document.getElementById("visitedResetBtn");
+  if(btn) btn.style.display=visitedSites.size>0?"inline-block":"none";
+}
+
+function render(jaKw,enKw){
+  const grid=document.getElementById("sitesGrid");
+  const missGrid=document.getElementById("missGrid");
+  const missSection=document.getElementById("missSection");
+  const statusBar=document.getElementById("statusBar");
+  const sectionLabel=document.getElementById("sectionLabel");
+  grid.innerHTML="";missGrid.innerHTML="";
+  const display=activeFilter==="all"?SITES:SITES.filter(s=>s.tags.includes(activeFilter));
+  if(!jaKw){
+    statusBar.classList.remove("visible");
+    missSection.style.display="none";
+    sectionLabel.textContent="対応サイト一覧";
+    display.forEach((s,i)=>grid.appendChild(buildCard(s,"none","","",i*.05)));
+    return;
+  }
+  const hc1=guessHitCategories(jaKw),hc2=guessHitCategories(enKw||"");
+  const hitCats=new Set([...hc1,...hc2]);
+  // 日本語・英語どちらも辞書未登録なら未知キーワード → 全部HIT
+  const unknown=isUnknownKeyword(jaKw)&&isUnknownKeyword(enKw||"");
+  const hits=display.filter(s=>isHit(s,hitCats,unknown));
+  const misses=display.filter(s=>!isHit(s,hitCats,unknown));
+  document.getElementById("statusKeyword").textContent=jaKw;
+  document.getElementById("statusCount").textContent=hits.length+"/"+display.length+" サイトにHIT";
+  statusBar.classList.add("visible");
+  sectionLabel.textContent="ヒットしたサイト ("+hits.length+")";
+  hits.forEach((s,i)=>grid.appendChild(buildCard(s,"hit",jaKw,enKw,i*.05)));
+  if(misses.length>0){
+    missSection.style.display="block";
+    misses.forEach((s,i)=>missGrid.appendChild(buildCard(s,"miss",jaKw,enKw,i*.05)));
+  }else{
+    missSection.style.display="none";
+  }
+}
+
+async function doSearch(kw){
+  if(!kw.trim()) return;
+  const jaKw=kw.trim();
+  isJapanese=detectJapanese(jaKw);
+  const loadingBar=document.getElementById("loadingBar");
+  const translateBadge=document.getElementById("translateBadge");
+  const searchBtn=document.getElementById("searchBtn");
+  translateBadge.classList.remove("visible");
+
+  if(isJapanese){
+    loadingBar.classList.add("visible");
+    searchBtn.disabled=true;
+    try{
+      const enKw=await translateToEnglish(jaKw);
+      currentJaKw=jaKw;currentEnKw=enKw;
+      document.getElementById("badgeJa").textContent=jaKw;
+      document.getElementById("badgeArrow").textContent="→";
+      document.getElementById("badgeEn").textContent=enKw;
+      document.getElementById("badgeNote").textContent="（英語サイトには "+enKw+" で渡しています）";
+      translateBadge.classList.add("visible");
+      render(jaKw,enKw);
+    }catch(e){
+      currentJaKw=jaKw;currentEnKw=jaKw;
+      document.getElementById("badgeJa").textContent=jaKw;
+      document.getElementById("badgeArrow").textContent="";
+      document.getElementById("badgeEn").textContent="";
+      document.getElementById("badgeNote").textContent="（翻訳に失敗。そのまま検索します）";
+      translateBadge.classList.add("visible");
+      render(jaKw,jaKw);
+    }finally{
+      loadingBar.classList.remove("visible");
+      searchBtn.disabled=false;
+    }
+  }else{
+    currentJaKw=jaKw;currentEnKw=jaKw;
+    document.getElementById("badgeJa").textContent=jaKw;
+    document.getElementById("badgeArrow").textContent="";
+    document.getElementById("badgeEn").textContent="";
+    document.getElementById("badgeNote").textContent="（英語キーワードをそのまま使用）";
+    translateBadge.classList.add("visible");
+    render(jaKw,jaKw);
+  }
+}
+
+function clearSearch(){
+  currentJaKw="";currentEnKw="";
+  document.getElementById("searchInput").value="";
+  document.getElementById("translateBadge").classList.remove("visible");
+  document.getElementById("statusBar").classList.remove("visible");
+  document.getElementById("loadingBar").classList.remove("visible");
+  render("","");
+}
+
+document.getElementById("categories").addEventListener("click",e=>{
+  const tag=e.target.closest(".cat-tag");
+  if(!tag) return;
+  document.querySelectorAll(".cat-tag").forEach(t=>t.classList.remove("active"));
+  tag.classList.add("active");
+  activeFilter=tag.dataset.cat;
+  render(currentJaKw,currentEnKw);
+});
+document.getElementById("searchBtn").addEventListener("click",()=>doSearch(document.getElementById("searchInput").value));
+document.getElementById("searchInput").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch(e.target.value);});
+document.getElementById("searchInput").addEventListener("input",e=>{if(!e.target.value.trim())clearSearch();});
+document.getElementById("clearBtn").addEventListener("click",clearSearch);
+document.getElementById("visitedResetBtn").addEventListener("click",()=>{
+  visitedSites.clear();
+  updateResetBtn();
+  render(currentJaKw,currentEnKw);
+});
+render("","");
+</script>
+</body>
+</html>
